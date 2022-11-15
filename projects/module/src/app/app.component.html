@@ -1,9 +1,14 @@
 <ilpn-page-layout>
-    <h2>TODO title</h2>
+    <h2>
+        An implementation of
+        <br> the ILP miner <!-- TODO link paper -->
+    </h2>
     <hr>
 
     <div fxLayout="row wrap" fxLayoutAlign="space-evenly start">
+        <ilpn-file-upload descriptionText="Drop a XES log file here" [fileDisplay]="fdLog" [showText]="log === undefined" (fileContent)="processLogUpload($event)"></ilpn-file-upload>
 
+        <ilpn-file-download descriptionText="click to download synthesis result" [squareContent]="'🦭'" [disabled]="processing || resultFiles.length === 0" [files]="resultFiles"></ilpn-file-download>
     </div>
 
 </ilpn-page-layout>
