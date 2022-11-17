@@ -1,12 +1,16 @@
-import {Component} from '@angular/core';
-import {AlgorithmResult, DropFile, FD_LOG, PetriNetSerialisationService, Trace, XesLogParserService} from 'ilpn-components';
+import {Component, OnDestroy} from '@angular/core';
+import {
+    AlgorithmResult, DropFile, FD_LOG,
+    IlpMinerResult, IlpMinerService, PetriNetSerialisationService, Trace, XesLogParserService
+} from 'ilpn-components';
+import {Subscription} from 'rxjs';
 
 @Component({
     selector: 'app-root',
     templateUrl: './app.component.html',
     styleUrls: ['./app.component.scss']
 })
-export class AppComponent {
+export class AppComponent implements OnDestroy {
 
     public fdLog = FD_LOG;
 
@@ -14,8 +18,15 @@ export class AppComponent {
     public resultFiles: Array<DropFile> = [];
     public processing = false;
 
+    private _sub: Subscription | undefined;
+
     constructor(private _logParser: XesLogParserService,
-                private _netSerializer: PetriNetSerialisationService) {
+                private _netSerializer: PetriNetSerialisationService,
+                private _miner: IlpMinerService) {
+    }
+
+    ngOnDestroy(): void {
+        this._sub?.unsubscribe();
     }
 
     public processLogUpload(files: Array<DropFile>) {
@@ -27,7 +38,10 @@ export class AppComponent {
         this.log = this._logParser.parse(files[0].content);
         console.debug(this.log);
 
-
+        this._sub = this._miner.mine(this.log).subscribe((r: IlpMinerResult) => {
+            this.resultFiles = [new DropFile('model.pn', this._netSerializer.serialise(r.net))];
+            this.processing = false;
+        });
     }
 
 }
