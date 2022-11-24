@@ -1,7 +1,7 @@
 import {Component, OnDestroy} from '@angular/core';
 import {
     AlgorithmResult, DropFile, FD_LOG,
-    IlpMinerResult, IlpMinerService, PetriNetSerialisationService, Trace, XesLogParserService
+    IlpMinerService, NetAndReport, PetriNetSerialisationService, Trace, XesLogParserService
 } from 'ilpn-components';
 import {Subscription} from 'rxjs';
 
@@ -33,13 +33,18 @@ export class AppComponent implements OnDestroy {
         this.processing = true;
         this.resultFiles = [];
 
-        const algorithmProtocol = new AlgorithmResult("ILP miner");
-
         this.log = this._logParser.parse(files[0].content);
         console.debug(this.log);
 
-        this._sub = this._miner.mine(this.log).subscribe((r: IlpMinerResult) => {
-            this.resultFiles = [new DropFile('model.pn', this._netSerializer.serialise(r.net))];
+        const runs = `number of runs: ${this.log.length}`;
+
+        const start = performance.now();
+        this._sub = this._miner.mine(this.log).subscribe((r: NetAndReport) => {
+            const stop = performance.now();
+            const report = new AlgorithmResult('ILP miner', start, stop);
+            report.addOutputLine(runs);
+            r.report.forEach(l => report.addOutputLine(l));
+            this.resultFiles = [new DropFile('model.pn', this._netSerializer.serialise(r.net)), report.toDropFile('report.txt')];
             this.processing = false;
         });
     }
