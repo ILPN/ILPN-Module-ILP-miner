@@ -1,9 +1,11 @@
 import {Component, OnDestroy} from '@angular/core';
 import {
     AlgorithmResult, DropFile, FD_LOG,
+    FD_PETRI_NET,
     IlpMinerService, NetAndReport, PetriNetSerialisationService, Trace, XesLogParserService
 } from 'ilpn-components';
 import {Subscription} from 'rxjs';
+
 
 @Component({
     selector: 'app-root',
@@ -13,9 +15,11 @@ import {Subscription} from 'rxjs';
 export class AppComponent implements OnDestroy {
 
     public fdLog = FD_LOG;
+    public fdPN = FD_PETRI_NET;
 
     public log: Array<Trace> | undefined;
-    public resultFiles: Array<DropFile> = [];
+    public pnResult: DropFile | undefined = undefined;
+    public reportResult: DropFile | undefined = undefined;
     public processing = false;
 
     private _sub: Subscription | undefined;
@@ -31,12 +35,12 @@ export class AppComponent implements OnDestroy {
 
     public processLogUpload(files: Array<DropFile>) {
         this.processing = true;
-        this.resultFiles = [];
+        this.pnResult = undefined;
 
         this.log = this._logParser.parse(files[0].content);
         console.debug(this.log);
 
-        const runs = `number of runs: ${this.log.length}`;
+        const runs = `number of traces: ${this.log.length}`;
 
         const start = performance.now();
         this._sub = this._miner.mine(this.log).subscribe((r: NetAndReport) => {
@@ -44,7 +48,8 @@ export class AppComponent implements OnDestroy {
             const report = new AlgorithmResult('ILP miner', start, stop);
             report.addOutputLine(runs);
             r.report.forEach(l => report.addOutputLine(l));
-            this.resultFiles = [new DropFile('model.pn', this._netSerializer.serialise(r.net)), report.toDropFile('report.txt')];
+            this.pnResult = new DropFile('model.pn', this._netSerializer.serialise(r.net));
+            this.reportResult = report.toDropFile('report.txt');
             this.processing = false;
         });
     }
